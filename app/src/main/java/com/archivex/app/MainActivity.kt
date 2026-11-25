@@ -75,6 +75,7 @@ class MainActivity : ComponentActivity() {
                 var currentFolder by remember { mutableStateOf<DocumentFile?>(null) }
                 var integrationReport by remember { mutableStateOf("Open or share files with compatible Android applications.") }
                 var activePanel by remember { mutableStateOf<String?>(null) }
+                var preferredMode by remember { mutableStateOf(getSharedPreferences("archive_x_settings", MODE_PRIVATE).getString("default_mode", "Standard") ?: "Standard") }
 
                 val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
                     if (uri != null) {
@@ -214,7 +215,7 @@ class MainActivity : ComponentActivity() {
                                 Icon(Icons.Rounded.ChevronRight, null)
                             }
                             OutlinedButton(
-                                onClick = { folderPicker.launch(null) },
+                                onClick = { if (preferredMode == "Hatch") activePanel = "hatch" else folderPicker.launch(null) },
                                 enabled = selected != null && !busy,
                                 modifier = Modifier.fillMaxWidth().height(50.dp),
                                 shape = RoundedCornerShape(15.dp),
@@ -222,7 +223,7 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 Icon(Icons.Rounded.CloudUpload, null)
                                 Spacer(Modifier.width(8.dp))
-                                Text("Extract to folder")
+                                Text(if (preferredMode == "Hatch") "Open Hatch Mode" else "Extract to folder")
                             }
                         }
 
@@ -350,7 +351,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             color = Ink
                         ) {
-                            SettingsScreen(context = this@MainActivity, onClose = { activePanel = null })
+                            SettingsScreen(context = this@MainActivity, onClose = { preferredMode = getSharedPreferences("archive_x_settings", MODE_PRIVATE).getString("default_mode", "Standard") ?: "Standard"; activePanel = null })
                         }
                     }
                 }
