@@ -81,7 +81,8 @@ class MainActivity : ComponentActivity() {
                     if (uri != null) {
                         selected = uri
                         extracted = false
-                        contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        runCatching { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
+                            .recoverCatching { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
                         val meta = queryMetadata(uri)
                         fileName = meta.first
                         fileSize = meta.second
@@ -93,6 +94,24 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+                val hatchDestinationPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
+                    if (tree != null && selected != null) {
+                        runCatching { contentResolver.takePersistableUriPermission(tree, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
+                        busy = true
+                        activePanel = null
+                        lifecycleScope.launch {
+                            report = withContext(Dispatchers.IO) { HatchEngine.run(this@MainActivity, contentResolver, selected!!, tree) }
+                            extracted = report.startsWith("HATCH COMPLETE") || report.startsWith("HATCH RECLAIMED")
+                            if (extracted) {
+                                val root = DocumentFile.fromTreeUri(this@MainActivity, tree)
+                                browserRoot = root
+                                currentFolder = root
+                            }
+                            busy = false
+                        }
+                    }
+                }
+
                 val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
                     if (tree != null && selected != null) {
                         contentResolver.takePersistableUriPermission(tree, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
@@ -366,6 +385,7 @@ class MainActivity : ComponentActivity() {
                                 archiveSize = fileSize,
                                 archiveUri = selected,
                                 onChooseArchive = { picker.launch(arrayOf("*/*")) },
+                                onStart = { hatchDestinationPicker.launch(null) },
                                 onClose = { activePanel = null }
                             )
                         }
