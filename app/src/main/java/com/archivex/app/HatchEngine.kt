@@ -40,6 +40,7 @@ object HatchEngine {
         var entries = 0
         var files = 0
         var written = 0L
+        var sourceReclaimed = false
 
         return try {
             val before = fingerprint(resolver, source)
@@ -127,18 +128,25 @@ object HatchEngine {
                 "The source archive changed during extraction. Original preserved; review destination files."
             }
 
+            // Persist intent before the destructive operation; failure aborts safely.
+            writeJournal(context, sourceName, before, "ready_to_reclaim")
+
             // Re-check the exact descriptor immediately before the destructive operation.
             truncateOriginal(resolver, source)
+            sourceReclaimed = true
 
-            // Best-effort durable marker for diagnostics/recovery inspection.
-            writeJournal(context, sourceName, before, "reclaimed")
+            // Never let a journal refresh failure delete already-verified outputs.
+            runCatching { writeJournal(context, sourceName, before, "reclaimed") }
             "HATCH COMPLETE\n\nArchive: $sourceName\nEntries checked: $entries\nFiles verified: $files\nData extracted: ${human(written)}\nOriginal archive: reclaimed (truncated to 0 bytes)\n\nAll outputs were written and verified before the original was modified."
         } catch (e: Exception) {
             // Before the final truncate, the source remains intact. Remove this run's
             // outputs where the provider permits it so failed attempts do not look complete.
-            created.asReversed().forEach { uri ->
-                runCatching { DocumentsContract.deleteDocument(resolver, uri) }
+            if (!sourceReclaimed) {
+                created.asReversed().forEach { uri ->
+                    runCatching { DocumentsContract.deleteDocument(resolver, uri) }
+                }
             }
+            if (sourceReclaimed) "HATCH RECLAIMED — JOURNAL WARNING\n\nArchive: $sourceName\nEntries checked: $entries\nFiles verified: $files\nData extracted: ${human(written)}\n\nThe source was truncated after verification. Keep the extracted destination intact." else
             "HATCH STOPPED — ORIGINAL PRESERVED\n\nArchive: $sourceName\nEntries reached: $entries\nFiles verified: $files\nData streamed: ${human(written)}\n\nReason: ${e.javaClass.simpleName}: ${e.message ?: "No additional details"}\n\nNo source reclamation was confirmed. Any incomplete outputs created by this attempt were removed where the provider allowed it."
         }
     }
