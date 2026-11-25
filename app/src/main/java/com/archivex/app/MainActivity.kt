@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -70,6 +71,9 @@ class MainActivity : ComponentActivity() {
                 var report by remember { mutableStateOf("Your archive details and extraction activity will appear here.") }
                 var busy by remember { mutableStateOf(false) }
                 var extracted by remember { mutableStateOf(false) }
+                var browserRoot by remember { mutableStateOf<DocumentFile?>(null) }
+                var currentFolder by remember { mutableStateOf<DocumentFile?>(null) }
+                var integrationReport by remember { mutableStateOf("Open or share files with compatible Android applications.") }
 
                 val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
                     if (uri != null) {
@@ -95,8 +99,33 @@ class MainActivity : ComponentActivity() {
                         lifecycleScope.launch {
                             report = withContext(Dispatchers.IO) { ArchiveEngine.extract(contentResolver, selected!!, tree) }
                             extracted = report.startsWith("Extraction complete")
+                            val root = DocumentFile.fromTreeUri(this@MainActivity, tree)
+                            browserRoot = root
+                            currentFolder = root
                             busy = false
                         }
+                    }
+                }
+
+
+                val openFilePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                    if (uri != null) {
+                        runCatching { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                        integrationReport = IntegrationManager.open(this@MainActivity, uri, contentResolver.getType(uri))
+                    }
+                }
+                val shareFilePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                    if (uri != null) {
+                        runCatching { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                        integrationReport = IntegrationManager.share(this@MainActivity, uri, contentResolver.getType(uri))
+                    }
+                }
+                val browseFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
+                    if (tree != null) {
+                        runCatching { contentResolver.takePersistableUriPermission(tree, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
+                        val root = DocumentFile.fromTreeUri(this@MainActivity, tree)
+                        browserRoot = root
+                        currentFolder = root
                     }
                 }
 
@@ -196,7 +225,25 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        SectionHeading("EXTRACTION MODE", "02")
+
+                        SectionHeading("INTEGRATION CENTER", "02")
+                        Column(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Panel)
+                                .border(1.dp, Color(0xFF293147), RoundedCornerShape(20.dp)).padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text("USE EXTRACTED OR EXISTING FILES", fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp)
+                            Text("Open documents, hand APKs to Android's package installer, or share files with compatible apps. Android decides whether an app can accept the file.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+                            Button(onClick = { openFilePicker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth()) {
+                                Text("Open / install a file")
+                            }
+                            OutlinedButton(onClick = { shareFilePicker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth()) {
+                                Text("Share a file")
+                            }
+                            Text(integrationReport, color = Color(0xFFC2C8D6), fontSize = 11.sp)
+                        }
+
+                        SectionHeading("EXTRACTION MODE", "03")
                         Column(
                             Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Panel)
                                 .border(1.dp, Color(0xFF293147), RoundedCornerShape(20.dp)).padding(16.dp),
@@ -220,7 +267,53 @@ class MainActivity : ComponentActivity() {
                             Text("Hatch Mode will only activate when the source format and storage provider support safe, recoverable in-place extraction.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
                         }
 
-                        SectionHeading("ARCHIVE INTELLIGENCE", "03")
+
+                        SectionHeading("FILE MANAGER", "04")
+                        Column(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Panel)
+                                .border(1.dp, Color(0xFF293147), RoundedCornerShape(20.dp)).padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text("BROWSE EXTRACTED CONTENTS", fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp)
+                            OutlinedButton(onClick = { browseFolderPicker.launch(null) }, modifier = Modifier.fillMaxWidth()) {
+                                Text("Choose a folder to browse")
+                            }
+                            if (currentFolder != null) {
+                                Text(currentFolder?.name ?: "Selected folder", color = Cyan, fontWeight = FontWeight.SemiBold)
+                                if (currentFolder != browserRoot) {
+                                    TextButton(onClick = { currentFolder = currentFolder?.parentFile ?: browserRoot }) {
+                                        Text("Go to parent folder")
+                                    }
+                                }
+                                val children = remember(currentFolder) { currentFolder?.listFiles()?.sortedBy { it.name?.lowercase() } ?: emptyList() }
+                                if (children.isEmpty()) {
+                                    Text("This folder is empty or the provider did not return its contents.", color = Muted, fontSize = 11.sp)
+                                } else {
+                                    children.take(100).forEach { child ->
+                                        Row(
+                                            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Panel2).padding(10.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(if (child.isDirectory) Icons.Rounded.FolderOpen else Icons.Rounded.Archive, null, tint = Violet)
+                                            Spacer(Modifier.width(9.dp))
+                                            Text(child.name ?: "Unnamed", modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis, fontSize = 12.sp)
+                                            TextButton(onClick = {
+                                                if (child.isDirectory) currentFolder = child
+                                                else integrationReport = IntegrationManager.open(this@MainActivity, child.uri, child.type)
+                                            }) { Text(if (child.isDirectory) "Open" else "Use") }
+                                            if (!child.isDirectory) {
+                                                TextButton(onClick = { integrationReport = IntegrationManager.share(this@MainActivity, child.uri, child.type) }) { Text("Share") }
+                                            }
+                                        }
+                                    }
+                                    if (children.size > 100) Text("Showing first 100 items.", color = Muted, fontSize = 10.sp)
+                                }
+                            } else {
+                                Text("Choose the destination folder after extraction to browse its contents here.", color = Muted, fontSize = 11.sp)
+                            }
+                        }
+
+                        SectionHeading("ARCHIVE INTELLIGENCE", "05")
                         Column(
                             Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Panel)
                                 .border(1.dp, Color(0xFF293147), RoundedCornerShape(20.dp)).padding(16.dp),
