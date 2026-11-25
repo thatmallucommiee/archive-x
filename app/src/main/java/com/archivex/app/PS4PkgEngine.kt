@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
-import android.os.ParcelFileDescriptor
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -245,8 +244,21 @@ object PS4PkgEngine {
                 pfsImageSize = u64(b, 0x418),
                 declaredPackageSize = u64(b, 0x430)
             )
+            require(h.bodyOffset <= channel.size() && h.bodySize <= channel.size() - h.bodyOffset) {
+                "Declared PKG body range extends beyond end of package."
+            }
+            if (h.contentSize > 0) {
+                require(h.contentOffset <= channel.size() && h.contentSize <= channel.size() - h.contentOffset) {
+                    "Declared PKG content range extends beyond end of package."
+                }
+            }
             require(h.pfsImageOffset <= channel.size() && h.pfsImageSize <= channel.size() - h.pfsImageOffset) {
                 "Declared PFS image range extends beyond end of package."
+            }
+            if (h.declaredPackageSize > 0) {
+                require(h.declaredPackageSize <= channel.size()) {
+                    "Declared package size exceeds the selected document length."
+                }
             }
             Parsed(h, entries, channel.size())
         }
