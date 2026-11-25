@@ -77,8 +77,9 @@ class MainActivity : ComponentActivity() {
                 var activePanel by remember { mutableStateOf<String?>(null) }
                 var preferredMode by remember { mutableStateOf(getSharedPreferences("archive_x_settings", MODE_PRIVATE).getString("default_mode", "Standard") ?: "Standard") }
 
-                val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-                    if (uri != null) {
+                val picker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                    val uri = result.data?.data
+                    if (result.resultCode == RESULT_OK && uri != null) {
                         selected = uri
                         extracted = false
                         runCatching { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
@@ -222,7 +223,11 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                             Button(
-                                onClick = { picker.launch(arrayOf("*/*")) },
+                                onClick = { picker.launch(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                    type = "*/*"
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                                }) },
                                 modifier = Modifier.fillMaxWidth().height(52.dp),
                                 shape = RoundedCornerShape(15.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Violet, contentColor = Ink)
