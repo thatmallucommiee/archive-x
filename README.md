@@ -2,7 +2,7 @@
 
 Android-first archive inspection and extraction app.
 
-## Current implementation
+## Planned extraction modes\n\nARCHIVE X is being developed with two modes: Standard Mode (preserve the source archive) and Hatch Mode (a destructive, progressive in-place extraction mode inspired by KaiHatch's user workflow). Hatch Mode is **not implemented yet**. It will only be enabled for formats and Android storage providers that pass strict seekability, verification, and recovery checks. See [Hatch Mode design](docs/HATCH_MODE_DESIGN.md).\n\n## Current implementation
 
 - Native Kotlin + Jetpack Compose Android app.
 - Uses Android's Storage Access Framework: users choose an input file and an output folder; no broad storage permission or external storage is required.
