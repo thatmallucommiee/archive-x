@@ -174,7 +174,9 @@ object HatchEngine {
             }
             Os.lseek(it.fileDescriptor, 0L, OsConstants.SEEK_SET)
             Os.ftruncate(it.fileDescriptor, 0L)
-            Os.fsync(it.fileDescriptor)
+            // ftruncate is the commit point. A later fsync failure must not be
+            // reported as a pre-commit failure or cause verified outputs to be deleted.
+            runCatching { Os.fsync(it.fileDescriptor) }
         }
     }
 
