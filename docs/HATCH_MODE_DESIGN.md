@@ -72,4 +72,4 @@ Prefer an engine boundary that accepts a seekable source abstraction, destinatio
 
 ## Current status
 
-This document is a plan, not a claim that Hatch Mode exists. The current app only has basic archive stream inspection/extraction and PS4 PKG signature recognition. No Hatch Mode, recovery journal, true in-place shrinking, ZIP central-directory parser, or PS4 PKG extraction has been implemented or verified yet.
+The development branch now includes a dedicated Hatch Mode preflight workspace and a saved default-mode preference. This is a user-facing workflow shell only: it does not yet execute destructive reclamation. No verified same-source truncation, ZIP central-directory planner, CRC-verified checkpoint journal, crash recovery, or reclaimed-space accounting has been implemented. The screen must state this clearly and must not modify the selected archive. The actual Hatch engine remains gated until the safety invariants above are implemented and tested.
