@@ -389,7 +389,11 @@ class MainActivity : ComponentActivity() {
                                 archiveName = fileName,
                                 archiveSize = fileSize,
                                 archiveUri = selected,
-                                onChooseArchive = { picker.launch(arrayOf("*/*")) },
+                                onChooseArchive = { picker.launch(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                    type = "*/*"
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                                }) },
                                 onStart = { hatchDestinationPicker.launch(null) },
                                 onClose = { activePanel = null }
                             )
