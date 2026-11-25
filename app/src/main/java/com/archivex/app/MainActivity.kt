@@ -138,8 +138,7 @@ class MainActivity : ComponentActivity() {
                                     Spacer(Modifier.weight(1f))
                                     Text("v0.1.0", color = Muted, fontSize = 10.sp)
                                 }
-                                Text("Your files.
-Under control.", fontSize = 31.sp, lineHeight = 36.sp, fontWeight = FontWeight.Bold)
+                                Text("Your files.\nUnder control.", fontSize = 31.sp, lineHeight = 36.sp, fontWeight = FontWeight.Bold)
                                 Text("Inspect, organise and extract archives with precision.", color = Color(0xFFC2C7D5), fontSize = 13.sp)
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     FeaturePill("SAFE EXTRACTION")
