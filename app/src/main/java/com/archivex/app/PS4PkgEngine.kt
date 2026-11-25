@@ -140,7 +140,7 @@ object PS4PkgEngine {
                     written = safeAdd(written, entry.size, "Total extracted size overflow.")
                     require(written <= MAX_TOTAL_BYTES) { "PKG metadata extraction exceeds 16 GiB safety limit." }
 
-                    val relative = safeRelativePath(entry.name)
+                    val relative = safeRelativePath(entry.name).removePrefix("sce_sys/")
                     val parts = relative.split('/').filter { it.isNotBlank() }
                     require(parts.isNotEmpty()) { "Invalid PKG entry path: ${entry.name}" }
                     var parent = sceSys
@@ -151,9 +151,7 @@ object PS4PkgEngine {
                     ) ?: error("Cannot create PKG output '$leaf'.")
                     created += document
 
-                    val sourceDigest = copyRangeAndHash(channel, entry.offset, entry.size) { buffer, count ->
-                        // The callback is intentionally not used for a second write pass.
-                    }
+                    val sourceDigest = hashRange(channel, entry.offset, entry.size)
                     writeRange(resolver, channel, entry.offset, entry.size, document)
                     val outputDigest = digestDocument(resolver, document)
                     require(sourceDigest.contentEquals(outputDigest)) {
@@ -219,7 +217,7 @@ object PS4PkgEngine {
             }
 
             val namesRecord = entriesRaw.firstOrNull { it[0] == 0x200L }
-            val names = namesRecord?.let { readBytes(channel, it[4], it[5].toInt().coerceAtMost(1 shl 20)) }
+            val names = namesRecord?.let { readBytes(channel, it[4], minOf(it[5], (1 shl 20).toLong()).toInt()) }
             val entries = entriesRaw.map { fields ->
                 val id = fields[0]
                 val fromTable = names?.let { decodeName(it, fields[1]) }
@@ -280,12 +278,7 @@ object PS4PkgEngine {
         return buffer.array()
     }
 
-    private fun copyRangeAndHash(
-        channel: FileChannel,
-        offset: Long,
-        length: Long,
-        onChunk: (ByteArray, Int) -> Unit
-    ): ByteArray {
+    private fun hashRange(channel: FileChannel, offset: Long, length: Long): ByteArray {
         val digest = MessageDigest.getInstance("SHA-256")
         val buffer = ByteArray(BUFFER_SIZE)
         var remaining = length
@@ -297,7 +290,6 @@ object PS4PkgEngine {
             if (n < 0) error("Unexpected end of PKG entry.")
             if (n == 0) continue
             digest.update(buffer, 0, n)
-            onChunk(buffer, n)
             remaining -= n
         }
         return digest.digest()
