@@ -72,4 +72,4 @@ Prefer an engine boundary that accepts a seekable source abstraction, destinatio
 
 ## Current status
 
-This document is a plan, not a claim that Hatch Mode exists. The current app only has basic archive stream inspection/extraction and PS4 PKG signature recognition. No Hatch Mode, recovery journal, true in-place shrinking, ZIP central-directory parser, or PS4 PKG extraction has been implemented or verified yet.
+The development branch includes a ZIP Hatch engine with final archive-level truncation (not progressive per-file reclamation) and a separate PS4 PKG parser/Hatch gate. PKG metadata extraction is available for plaintext table entries; PFS/encrypted payloads remain inaccessible and force Hatch to preserve the original. Neither implementation has been validated on the target Android device. Keep both experimental and do not claim progressive reclaim, durable recovery, or complete PS4 game extraction.
