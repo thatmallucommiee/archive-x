@@ -72,4 +72,4 @@ Prefer an engine boundary that accepts a seekable source abstraction, destinatio
 
 ## Current status
 
-The development branch now includes a dedicated Hatch Mode preflight workspace and a saved default-mode preference. This is a user-facing workflow shell only: it does not yet execute destructive reclamation. No verified same-source truncation, ZIP central-directory planner, CRC-verified checkpoint journal, crash recovery, or reclaimed-space accounting has been implemented. The screen must state this clearly and must not modify the selected archive. The actual Hatch engine remains gated until the safety invariants above are implemented and tested.
+The development branch includes a ZIP Hatch engine with final archive-level truncation (not progressive per-file reclamation) and a separate PS4 PKG parser/Hatch gate. PKG metadata extraction is available for plaintext table entries; PFS/encrypted payloads remain inaccessible and force Hatch to preserve the original. Neither implementation has been validated on the target Android device. Keep both experimental and do not claim progressive reclaim, durable recovery, or complete PS4 game extraction.
