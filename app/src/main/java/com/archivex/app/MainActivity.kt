@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
                 var browserRoot by remember { mutableStateOf<DocumentFile?>(null) }
                 var currentFolder by remember { mutableStateOf<DocumentFile?>(null) }
                 var integrationReport by remember { mutableStateOf("Open or share files with compatible Android applications.") }
+                var activePanel by remember { mutableStateOf<String?>(null) }
 
                 val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
                     if (uri != null) {
@@ -148,7 +149,7 @@ class MainActivity : ComponentActivity() {
                                 Text("ARCHIVE X", fontSize = 25.sp, fontWeight = FontWeight.Black, letterSpacing = 1.3.sp)
                                 Text("ADVANCED ARCHIVE WORKSPACE", fontSize = 9.sp, color = Muted, letterSpacing = 1.8.sp)
                             }
-                            IconButton(onClick = { report = "Settings will be available in a future update." }) {
+                            IconButton(onClick = { activePanel = "settings" }) {
                                 Icon(Icons.Rounded.Settings, "Settings", tint = Muted)
                             }
                         }
@@ -260,11 +261,14 @@ class MainActivity : ComponentActivity() {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
                                     Text("Hatch Mode", fontWeight = FontWeight.Bold, color = Color(0xFFD8C9FF))
-                                    Text("Progressively reclaim archive storage.", color = Muted, fontSize = 11.sp)
+                                    Text("Open the dedicated preflight and reclamation workspace.", color = Muted, fontSize = 11.sp)
                                 }
-                                StatusPill("IN DEVELOPMENT", Violet)
+                                StatusPill("PREVIEW", Violet)
                             }
-                            Text("Hatch Mode will only activate when the source format and storage provider support safe, recoverable in-place extraction.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+                            Text("Inspect eligibility, review the destructive-operation safety rules and see exactly why Hatch execution is gated in this build.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+                            OutlinedButton(onClick = { activePanel = "hatch" }, modifier = Modifier.fillMaxWidth()) {
+                                Text("Open Hatch Mode")
+                            }
                         }
 
 
@@ -335,6 +339,35 @@ class MainActivity : ComponentActivity() {
                             Text("Private, on-device processing · No upload required", color = Muted, fontSize = 10.sp)
                         }
                         Text("ARCHIVE X  ·  BUILT FOR CONTROL", color = Color(0xFF596278), fontSize = 9.sp, letterSpacing = 1.5.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
+                    }
+                }
+                if (activePanel == "settings") {
+                    androidx.compose.ui.window.Dialog(
+                        onDismissRequest = { activePanel = null },
+                        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+                    ) {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = Ink
+                        ) {
+                            SettingsScreen(context = this@MainActivity, onClose = { activePanel = null })
+                        }
+                    }
+                }
+                if (activePanel == "hatch") {
+                    androidx.compose.ui.window.Dialog(
+                        onDismissRequest = { activePanel = null },
+                        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+                    ) {
+                        Surface(modifier = Modifier.fillMaxSize(), color = Ink) {
+                            HatchModeScreen(
+                                archiveName = fileName,
+                                archiveSize = fileSize,
+                                archiveUri = selected,
+                                onChooseArchive = { picker.launch(arrayOf("*/*")) },
+                                onClose = { activePanel = null }
+                            )
+                        }
                     }
                 }
             }
