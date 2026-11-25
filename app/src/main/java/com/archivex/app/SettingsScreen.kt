@@ -21,8 +21,6 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun SettingsScreen(context: Context, onClose: () -> Unit) {
     val prefs = remember { context.getSharedPreferences("archive_x_settings", Context.MODE_PRIVATE) }
-    var confirmBeforeExtract by remember { mutableStateOf(prefs.getBoolean("confirm_extract", true)) }
-    var showDiagnostics by remember { mutableStateOf(prefs.getBoolean("show_diagnostics", true)) }
     var defaultMode by remember { mutableStateOf(prefs.getString("default_mode", "Standard") ?: "Standard") }
     Column(
         Modifier.fillMaxSize().background(Color(0xFF090B14)).verticalScroll(rememberScrollState()).padding(20.dp),
@@ -35,11 +33,6 @@ fun SettingsScreen(context: Context, onClose: () -> Unit) {
             IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, "Close", tint = Color.White) }
         }
         SettingsGroup("EXTRACTION") {
-            SettingSwitch("Confirm before extraction", "Ask before starting an extraction task.", confirmBeforeExtract) {
-                confirmBeforeExtract = it
-                prefs.edit().putBoolean("confirm_extract", it).apply()
-            }
-            HorizontalDivider(color = Color(0xFF30364A))
             Text("Default extraction mode", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
             Text("Hatch remains gated until verified in-place extraction and recovery are implemented.", color = Color(0xFF9AA4B9), fontSize = 11.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -49,12 +42,6 @@ fun SettingsScreen(context: Context, onClose: () -> Unit) {
                 FilterChip(selected = defaultMode == "Hatch", onClick = {
                     defaultMode = "Hatch"; prefs.edit().putString("default_mode", defaultMode).apply()
                 }, label = { Text("Hatch") })
-            }
-        }
-        SettingsGroup("DIAGNOSTICS") {
-            SettingSwitch("Show detailed diagnostics", "Include technical failure details in extraction reports.", showDiagnostics) {
-                showDiagnostics = it
-                prefs.edit().putBoolean("show_diagnostics", it).apply()
             }
         }
         SettingsGroup("STORAGE & PRIVACY") {
