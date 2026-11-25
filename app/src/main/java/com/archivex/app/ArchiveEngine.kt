@@ -131,7 +131,7 @@ object ArchiveEngine {
     }
 
     private fun safePath(path: String): String? {
-        val normalized = path.replace('\\\\', '/').trimStart('/')
+        val normalized = path.replace('\\', '/').trimStart('/')
         if (normalized.isBlank() || normalized.split('/').any { it == ".." }) return null
         if (normalized.startsWith("~")) return null
         return normalized
