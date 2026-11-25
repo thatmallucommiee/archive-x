@@ -27,8 +27,8 @@ Android-only, no root, and user-authorised Storage Access Framework (SAF) access
 | APK installer handoff | Uses Android ACTION_VIEW; Android controls installation approval |
 | Copy/move/rename/delete/repackage | Not implemented |
 | RAR / 7z / standalone compressed streams | Not implemented |
-| PS4 PKG parsing and extraction | Not implemented; previous main build only recognised signature |
-| Hatch Mode / source reclamation | Not implemented |
+| PS4 PKG header/table parser | Implemented in development branch; retail/FPKG structures recognised by shared header/table layout |\n| PS4 PKG plaintext metadata extraction | Implemented in development branch; per-entry SHA-256 output verification; encrypted entries skipped |\n| PS4 PKG PFS/game payload extraction | Not implemented; encrypted PFS is not decrypted |\n| PS4 PKG Hatch reclamation | Package-aware preflight implemented; destructive reclaim fails closed while PFS/encrypted/opaque payload remains |
+| ZIP Hatch / source reclamation | Experimental all-at-once reclaim; progressive per-file reclaim and crash recovery not implemented |
 | Durable sessions, pause/resume, recovery journal | Not implemented |
 
 A successful Gradle build is not proof of runtime correctness. Test on real Android storage providers and the target POCO device.
@@ -114,7 +114,7 @@ Hatch Mode is destructive and must remain disabled until a format-specific imple
 
 SAF providers may not expose safe in-place truncation. If capability cannot be proved, Hatch must fail closed and offer Standard Mode. Do not create a hidden full-size temporary copy.
 
-ZIP/ZIP64 is the first Hatch target. PS4 PKG is not Hatch-compatible without an independent safety design.
+ZIP/ZIP64 is the first Hatch target. PS4 PKG now has an independent parser and plaintext metadata extraction path. PKG Hatch checks for PFS images and encrypted entries, then refuses destructive reclamation if any opaque game payload remains. This is intentional: table metadata is not the complete game filesystem. Retail and FPKG use the same outer PKG structure, but this build does not decrypt PFS or encrypted entries.
 
 ## PS4 PKG scope
 
