@@ -167,17 +167,23 @@ object HatchEngine {
     private fun truncateOriginal(resolver: ContentResolver, uri: Uri) {
         val pfd = resolver.openFileDescriptor(uri, "rw")
             ?: error("Read/write access disappeared before reclamation. Original preserved.")
-        pfd.use {
-            val stat = Os.fstat(it.fileDescriptor)
+        var committed = false
+        try {
+            val fd = pfd.fileDescriptor
+            val stat = Os.fstat(fd)
             require((stat.st_mode and OsConstants.S_IFMT) == OsConstants.S_IFREG) {
                 "Source is no longer a regular file. Original preserved."
             }
-            Os.lseek(it.fileDescriptor, 0L, OsConstants.SEEK_SET)
-            Os.ftruncate(it.fileDescriptor, 0L)
-            // ftruncate is the commit point. A later fsync failure must not be
-            // reported as a pre-commit failure or cause verified outputs to be deleted.
-            runCatching { Os.fsync(it.fileDescriptor) }
+            Os.lseek(fd, 0L, OsConstants.SEEK_SET)
+            Os.ftruncate(fd, 0L)
+            committed = true
+            // ftruncate is the commit point. Sync/close failures must not cause
+            // verified outputs to be deleted after the source has been consumed.
+            runCatching { Os.fsync(fd) }
+        } finally {
+            runCatching { pfd.close() }
         }
+        check(committed) { "Source reclamation did not commit." }
     }
 
     private fun fingerprint(resolver: ContentResolver, uri: Uri): String {
