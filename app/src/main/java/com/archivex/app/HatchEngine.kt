@@ -35,6 +35,9 @@ object HatchEngine {
     private const val BUFFER_SIZE = 64 * 1024
 
     fun run(context: Context, resolver: ContentResolver, source: Uri, destinationTree: Uri): String {
+        if (PS4PkgEngine.isPkg(resolver, source)) {
+            return PS4PkgEngine.runHatch(resolver, source, destinationTree)
+        }
         val sourceName = queryName(resolver, source)
         val created = mutableListOf<Uri>()
         var entries = 0
