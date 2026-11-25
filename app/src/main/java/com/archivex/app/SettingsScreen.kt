@@ -34,7 +34,7 @@ fun SettingsScreen(context: Context, onClose: () -> Unit) {
         }
         SettingsGroup("EXTRACTION") {
             Text("Default extraction mode", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-            Text("Hatch remains gated until verified in-place extraction and recovery are implemented.", color = Color(0xFF9AA4B9), fontSize = 11.sp)
+            Text("Hatch supports verified ZIP extraction followed by a final in-place reclaim where the selected provider allows it. It is not yet progressive per file.", color = Color(0xFF9AA4B9), fontSize = 11.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(selected = defaultMode == "Standard", onClick = {
                     defaultMode = "Standard"; prefs.edit().putString("default_mode", defaultMode).apply()
@@ -54,7 +54,7 @@ fun SettingsScreen(context: Context, onClose: () -> Unit) {
         SettingsGroup("ABOUT") {
             Text("ARCHIVE X", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
             Text("Version 0.1.0 · Android archive workspace", color = Color(0xFF9AA4B9), fontSize = 11.sp)
-            Text("ZIP/TAR extraction and basic file handoff are under active development. PS4 PKG extraction, full file operations and genuine Hatch reclamation are not yet implemented.", color = Color(0xFF9AA4B9), fontSize = 11.sp, lineHeight = 17.sp)
+            Text("ZIP/TAR Standard extraction, basic file handoff and transactional ZIP Hatch are under active development. Per-file progressive Hatch, PS4 PKG extraction and full file operations are not yet implemented.", color = Color(0xFF9AA4B9), fontSize = 11.sp, lineHeight = 17.sp)
         }
         OutlinedButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text("Done") }
     }
