@@ -14,8 +14,8 @@ ARCHIVE X is being developed as a native Kotlin + Jetpack Compose application fo
 
 ## Not yet implemented
 
-- Hatch Mode and safe in-place storage reclamation.
-- PS4 PKG entry-table parsing or extraction.
+- PKG-specific Hatch preflight is implemented; destructive PKG reclamation remains gated when PFS/encrypted/opaque payload exists. ZIP Hatch is still experimental.
+- PS4 PKG header/entry-table parsing and SHA-256-verified extraction of accessible plaintext metadata. Encrypted entries and PFS game images are skipped.
 - RAR, 7z, and other additional archive engines.
 - Full file operations such as copy, move, rename, delete, and repackaging.
 - Durable extraction sessions, pause/resume, and crash recovery.
