@@ -90,7 +90,7 @@ object ArchiveEngine {
                         ?: error("Android storage provider refused to create '$outputName'. Check destination permissions and free space.")
                     created += document
 
-                    resolver.openOutputStream(document, "wt")?.use { out ->
+                    resolver.openOutputStream(document, "w")?.use { out ->
                         val buffer = ByteArray(BUFFER_SIZE)
                         var entryBytes = 0L
                         while (true) {
