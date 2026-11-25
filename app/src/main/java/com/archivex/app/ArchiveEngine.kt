@@ -25,8 +25,8 @@ object ArchiveEngine {
 
     fun inspect(resolver: ContentResolver, uri: Uri): String {
         val name = queryName(resolver, uri)
-        if (isPs4Pkg(resolver, uri)) {
-            return "Selected: $name\nFormat: PlayStation 4 PKG\nStatus: Package signature recognised.\n\nPKG extraction is not implemented in this build. No decryption, DRM removal or signature bypass is performed."
+        if (PS4PkgEngine.isPkg(resolver, uri)) {
+            return PS4PkgEngine.inspect(resolver, uri)
         }
         return try {
             val lines = mutableListOf("Selected: $name", "", "Reading archive directory…")
@@ -54,8 +54,8 @@ object ArchiveEngine {
 
     fun extract(resolver: ContentResolver, uri: Uri, tree: Uri): String {
         val name = queryName(resolver, uri)
-        if (isPs4Pkg(resolver, uri)) {
-            return "Extraction unavailable.\n\nThis is a PS4 PKG package. PKG parsing/extraction is not implemented yet."
+        if (PS4PkgEngine.isPkg(resolver, uri)) {
+            return PS4PkgEngine.extract(resolver, uri, tree)
         }
         var entries = 0
         var files = 0
